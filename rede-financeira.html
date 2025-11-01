@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rede do Sistema Financeiro Brasileiro - 50 Maiores Empresas</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            backdrop-filter: blur(10px);
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 2.2em;
+        }
+        .subtitle {
+            text-align: center;
+            color: #7f8c8d;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+        .controls {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 25px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        button:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        button.active {
+            background: #e74c3c;
+        }
+        .legend {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin: 25px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 5px;
+        }
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            margin-right: 8px;
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .tooltip {
+            position: absolute;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            border-radius: 8px;
+            pointer-events: none;
+            font-size: 14px;
+            max-width: 300px;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            backdrop-filter: blur(5px);
+        }
+        #network {
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            background: white;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+            padding: 15px;
+            background: #2c3e50;
+            color: white;
+            border-radius: 10px;
+            font-size: 14px;
+        }
+        .stat-item {
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #3498db;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏦 Rede do Sistema Financeiro Brasileiro</h1>
+        <div class="subtitle">50 Maiores Empresas - Análise de Conexões e Relacionamentos</div>
+        
+        <div class="controls">
+            <button onclick="filterNetwork('all')" class="active">Todas as Conexões</button>
+            <button onclick="filterNetwork('shareholding')">Participação Acionária</button>
+            <button onclick="filterNetwork('credit')">Relações de Crédito</button>
+            <button onclick="filterNetwork('consortium')">Consórcios</button>
+            <button onclick="filterNetwork('board')">Conselho Compartilhado</button>
+            <button onclick="filterNetwork('investment')">Investimentos</button>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #e74c3c;"></div>
+                <span>Bancos Comerciais</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #3498db;"></div>
+                <span>Bancos de Investimento</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #2ecc71;"></div>
+                <span>Seguros e Previdência</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #f39c12;"></div>
+                <span>Fintechs & Pagamentos</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #9b59b6;"></div>
+                <span>Gestoras de Recursos</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #1abc9c;"></div>
+                <span>Corretoras</span>
+            </div>
+        </div>
+
+        <div id="network"></div>
+        
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-value" id="total-companies">50</div>
+                <div>Empresas</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="total-connections">0</div>
+                <div>Conexões</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="avg-connections">0</div>
+                <div>Média por Empresa</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="network-density">0</div>
+                <div>Densidade da Rede</div>
+            </div>
+        </div>
+
+        <div class="tooltip"></div>
+    </div>
+
+    <script>
+        // Dados das 50 principais empresas financeiras brasileiras
+        const companies = [
+            // Bancos Comerciais (Vermelho - #e74c3c)
+            {id: "ITAU UNIBANCO", group: 1, revenue: 120, assets: 2000, type: "Banco Comercial"},
+            {id: "BRADESCO", group: 1, revenue: 110, assets: 1800, type: "Banco Comercial"},
+            {id: "BANCO DO BRASIL", group: 1, revenue: 95, assets: 1700, type: "Banco Comercial"},
+            {id: "SANTANDER BR", group: 1, revenue: 85, assets: 900, type: "Banco Comercial"},
+            {id: "CAIXA ECONÔMICA", group: 1, revenue: 78, assets: 1200, type: "Banco Comercial"},
+            {id: "BANCO SAFRA", group: 1, revenue: 25, assets: 120, type: "Banco Comercial"},
+            {id: "BANCO BMG", group: 1, revenue: 18, assets: 80, type: "Banco Comercial"},
+            {id: "BANCO PAN", group: 1, revenue: 12, assets: 45, type: "Banco Comercial"},
+            {id: "BANCO INTER", group: 1, revenue: 15, assets: 90, type: "Banco Comercial"},
+            {id: "BANCO ORIGINAL", group: 1, revenue: 8, assets: 35, type: "Banco Comercial"},
+
+            // Bancos de Investimento (Azul - #3498db)
+            {id: "BTG PACTUAL", group: 2, revenue: 25, assets: 300, type: "Banco Investimento"},
+            {id: "BANCO XP", group: 2, revenue: 20, assets: 150, type: "Banco Investimento"},
+            {id: "BANCO MODAL", group: 2, revenue: 12, assets: 60, type: "Banco Investimento"},
+            {id: "BANCO FATOR", group: 2, revenue: 10, assets: 45, type: "Banco Investimento"},
+            {id: "BANCO GENIAL", group: 2, revenue: 8, assets: 30, type: "Banco Investimento"},
+            {id: "BANCO VOITER", group: 2, revenue: 6, assets: 25, type: "Banco Investimento"},
+
+            // Seguradoras e Previdência (Verde - #2ecc71)
+            {id: "BBD SEGURADORA", group: 3, revenue: 45, assets: 200, type: "Seguradora"},
+            {id: "ITAU SEGUROS", group: 3, revenue: 40, assets: 180, type: "Seguradora"},
+            {id: "PORTO SEGURO", group: 3, revenue: 35, assets: 120, type: "Seguradora"},
+            {id: "SUL AMERICA", group: 3, revenue: 28, assets: 90, type: "Seguradora"},
+            {id: "BRADESCO SEGUROS", group: 3, revenue: 42, assets: 190, type: "Seguradora"},
+            {id: "MAPFRE", group: 3, revenue: 22, assets: 70, type: "Seguradora"},
+            {id: "ALLIANZ", group: 3, revenue: 18, assets: 60, type: "Seguradora"},
+            {id: "TOKIO MARINE", group: 3, revenue: 15, assets: 50, type: "Seguradora"},
+            {id: "ZURICH", group: 3, revenue: 12, assets: 40, type: "Seguradora"},
+
+            // Fintechs e Pagamentos (Laranja - #f39c12)
+            {id: "PAGSEGURO", group: 4, revenue: 15, assets: 40, type: "Pagamentos"},
+            {id: "STONE", group: 4, revenue: 12, assets: 35, type: "Pagamentos"},
+            {id: "CIELO", group: 4, revenue: 18, assets: 45, type: "Pagamentos"},
+            {id: "PAGBANK", group: 4, revenue: 10, assets: 25, type: "Pagamentos"},
+            {id: "MERCADO PAGO", group: 4, revenue: 20, assets: 50, type: "Pagamentos"},
+            {id: "PICPAY", group: 4, revenue: 8, assets: 20, type: "Pagamentos"},
+            {id: "NUBANK", group: 4, revenue: 25, assets: 80, type: "Fintech"},
+            {id: "WARREN", group: 4, revenue: 6, assets: 15, type: "Fintech"},
+            {id: "EASYNVEST", group: 4, revenue: 9, assets: 22, type: "Fintech"},
+
+            // Gestoras de Recursos (Roxo - #9b59b6)
+            {id: "ITAÚ ASSET", group: 5, revenue: 8, assets: 400, type: "Gestora"},
+            {id: "BRADESCO ASSET", group: 5, revenue: 7, assets: 350, type: "Gestora"},
+            {id: "BTG GESTORA", group: 5, revenue: 10, assets: 300, type: "Gestora"},
+            {id: "QUASAR ASSET", group: 5, revenue: 5, assets: 120, type: "Gestora"},
+            {id: "GESTOR BB", group: 5, revenue: 6, assets: 280, type: "Gestora"},
+            {id: "KINEA", group: 5, revenue: 4, assets: 90, type: "Gestora"},
+            {id: "TRUXT", group: 5, revenue: 3, assets: 60, type: "Gestora"},
+
+            // Corretoras (Turquesa - #1abc9c)
+            {id: "XP INVESTIMENTOS", group: 6, revenue: 15, assets: 80, type: "Corretora"},
+            {id: "RICO", group: 6, revenue: 12, assets: 60, type: "Corretora"},
+            {id: "CLEAR", group: 6, revenue: 10, assets: 45, type: "Corretora"},
+            {id: "MODALMAIS", group: 6, revenue: 8, assets: 35, type: "Corretora"},
+            {id: "GENIAL INVEST", group: 6, revenue: 7, assets: 30, type: "Corretora"},
+            {id: "EQI", group: 6, revenue: 5, assets: 20, type: "Corretora"},
+            {id: "TORO", group: 6, revenue: 6, assets: 25, type: "Corretora"}
+        ];
+
+        // Conexões baseadas em relações reais do mercado financeiro
+        const links = [
+            // Conexões de participação acionária
+            {source: "ITAU UNIBANCO", target: "ITAU SEGUROS", type: "shareholding", strength: 1.0},
+            {source: "ITAU UNIBANCO", target: "ITAÚ ASSET", type: "shareholding", strength: 1.0},
+            {source: "BRADESCO", target: "BBD SEGURADORA", type: "shareholding", strength: 1.0},
+            {source: "BRADESCO", target: "BRADESCO SEGUROS", type: "shareholding", strength: 1.0},
+            {source: "BRADESCO", target: "BRADESCO ASSET", type: "shareholding", strength: 1.0},
+            {source: "BANCO DO BRASIL", target: "GESTOR BB", type: "shareholding", strength: 1.0},
+            {source: "BTG PACTUAL", target: "BTG GESTORA", type: "shareholding", strength: 1.0},
+            {source: "BANCO XP", target: "XP INVESTIMENTOS", type: "shareholding", strength: 1.0},
+            {source: "BANCO XP", target: "RICO", type: "shareholding", strength: 0.8},
+
+            // Relações de crédito e financiamento
+            {source: "ITAU UNIBANCO", target: "BTG PACTUAL", type: "credit", strength: 0.6},
+            {source: "BRADESCO", target: "BANCO XP", type: "credit", strength: 0.5},
+            {source: "BANCO DO BRASIL", target: "NUBANK", type: "credit", strength: 0.4},
+            {source: "CAIXA ECONÔMICA", target: "PAGSEGURO", type: "credit", strength: 0.5},
+            {source: "SANTANDER BR", target: "STONE", type: "credit", strength: 0.4},
+            {source: "ITAU UNIBANCO", target: "CIELO", type: "credit", strength: 0.7},
+
+            // Consórcios e parcerias
+            {source: "ITAU UNIBANCO", target: "BRADESCO", type: "consortium", strength: 0.3},
+            {source: "BANCO DO BRASIL", target: "CAIXA ECONÔMICA", type: "consortium", strength: 0.4},
+            {source: "PORTO SEGURO", target: "ITAU UNIBANCO", type: "consortium", strength: 0.5},
+            {source: "SUL AMERICA", target: "BRADESCO", type: "consortium", strength: 0.4},
+            {source: "PAGSEGURO", target: "ITAU UNIBANCO", type: "consortium", strength: 0.6},
+            {source: "STONE", target: "BRADESCO", type: "consortium", strength: 0.5},
+            {source: "CIELO", target: "BANCO DO BRASIL", type: "consortium", strength: 0.7},
+
+            // Investimentos cruzados
+            {source: "BTG PACTUAL", target: "PAGSEGURO", type: "investment", strength: 0.5},
+            {source: "ITAU UNIBANCO", target: "NUBANK", type: "investment", strength: 0.3},
+            {source: "BRADESCO", target: "WARREN", type: "investment", strength: 0.4},
+            {source: "BANCO XP", target: "EASYNVEST", type: "investment", strength: 0.8},
+
+            // Conselho compartilhado
+            {source: "ITAU UNIBANCO", target: "BANCO SAFRA", type: "board", strength: 0.2},
+            {source: "BRADESCO", target: "BANCO BMG", type: "board", strength: 0.3},
+            {source: "BTG PACTUAL", target: "BANCO MODAL", type: "board", strength: 0.4},
+            {source: "BANCO DO BRASIL", target: "BANCO PAN", type: "board", strength: 0.5},
+
+            // Conexões entre fintechs
+            {source: "NUBANK", target: "PICPAY", type: "consortium", strength: 0.3},
+            {source: "PAGSEGURO", target: "MERCADO PAGO", type: "consortium", strength: 0.4},
+            {source: "STONE", target: "CIELO", type: "consortium", strength: 0.3},
+
+            // Conexões de corretoras
+            {source: "XP INVESTIMENTOS", target: "CLEAR", type: "consortium", strength: 0.2},
+            {source: "RICO", target: "MODALMAIS", type: "consortium", strength: 0.3},
+            {source: "GENIAL INVEST", target: "TORO", type: "consortium", strength: 0.4},
+
+            // Conexões de gestoras
+            {source: "ITAÚ ASSET", target: "BRADESCO ASSET", type: "consortium", strength: 0.3},
+            {source: "BTG GESTORA", target: "QUASAR ASSET", type: "investment", strength: 0.5},
+            {source: "GESTOR BB", target: "KINEA", type: "consortium", strength: 0.4}
+        ];
+
+        // Configuração do SVG
+        const width = 1200, height = 800;
+        const svg = d3.select("#network")
+            .append("svg")
+            .attr("width", width)
+            .attr("height", height);
+
+        // Tooltip
+        const tooltip = d3.select(".tooltip");
+
+        // Escala de cores por grupo
+        const colorScale = d3.scaleOrdinal()
+            .domain([1, 2, 3, 4, 5, 6])
+            .range(["#e74c3c", "#3498db", "#2ecc71", "#f39c12", "#9b59b6", "#1abc9c"]);
+
+        // Atualizar estatísticas
+        function updateStats() {
+            document.getElementById('total-companies').textContent = companies.length;
+            document.getElementById('total-connections').textContent = links.length;
+            document.getElementById('avg-connections').textContent = (links.length / companies.length).toFixed(1);
+            document.getElementById('network-density').textContent = ((2 * links.length) / (companies.length * (companies.length - 1))).toFixed(3);
+        }
+
+        // Simulação de força
+        const simulation = d3.forceSimulation(companies)
+            .force("link", d3.forceLink(links).id(d => d.id).distance(d => 200 - (d.strength * 100)))
+            .force("charge", d3.forceManyBody().strength(-100))
+            .force("center", d3.forceCenter(width / 2, height / 2))
+            .force("collision", d3.forceCollide().radius(d => Math.sqrt(d.revenue) + 15));
+
+        // Container para elementos
+        const g = svg.append("g");
+
+        // Linhas (arestas)
+        const link = g.append("g")
+            .selectAll("line")
+            .data(links)
+            .enter().append("line")
+            .attr("class", "link")
+            .attr("stroke", d => {
+                const colors = {
+                    "shareholding": "#e74c3c",
+                    "credit": "#3498db", 
+                    "consortium": "#2ecc71",
+                    "board": "#9b59b6",
+                    "investment": "#f39c12"
+                };
+                return colors[d.type] || "#95a5a6";
+            })
+            .attr("stroke-width", d => d.strength * 6)
+            .attr("stroke-opacity", 0.7)
+            .attr("stroke-dasharray", d => d.type === "credit" ? "5,5" : "0");
+
+        // Nós (empresas)
+        const node = g.append("g")
+            .selectAll("circle")
+            .data(companies)
+            .enter().append("circle")
+            .attr("class", "node")
+            .attr("r", d => Math.max(8, Math.sqrt(d.revenue) * 0.8))
+            .attr("fill", d => colorScale(d.group))
+            .attr("stroke", "#fff")
+            .attr("stroke-width", 3)
+            .call(d3.drag()
+                .on("start", dragstarted)
+                .on("drag", dragged)
+                .on("end", dragended));
+
+        // Labels das empresas
+        const label = g.append("g")
+            .selectAll("text")
+            .data(companies)
+            .enter().append("text")
+            .text(d => d.id)
+            .attr("font-size", d => Math.max(10, Math.sqrt(d.revenue) * 0.5))
+            .attr("dx", 15)
+            .attr("dy", 4)
+            .attr("fill", "#2c3e50")
+            .attr("font-weight", "600")
+            .attr("text-shadow", "1px 1px 2px white");
+
+        // Tooltip interativo
+        node.on("mouseover", function(event, d) {
+                // Destacar conexões
+                link.attr("stroke-opacity", l => (l.source === d || l.target === d) ? 1 : 0.1);
+                node.attr("opacity", n => isConnected(d, n) ? 1 : 0.2);
+                label.attr("opacity", n => isConnected(d, n) ? 1 : 0.2);
+
+                tooltip.style("opacity", 1)
+                    .html(`
+                        <strong>${d.id}</strong><br>
+                        Tipo: ${d.type}<br>
+                        Receita: R$ ${d.revenue} bi<br>
+                        Ativos: R$ ${d.assets} bi<br>
+                        Setor: ${getGroupName(d.group)}<br>
+                        Conexões: ${countConnections(d)}
+                    `);
+            })
+            .on("mousemove", function(event) {
+                tooltip.style("left", (event.pageX + 15) + "px")
+                    .style("top", (event.pageY - 15) + "px");
+            })
+            .on("mouseout", function() {
+                link.attr("stroke-opacity", 0.7);
+                node.attr("opacity", 1);
+                label.attr("opacity", 1);
+                tooltip.style("opacity", 0);
+            });
+
+        // Atualização da simulação
+        simulation.on("tick", () => {
+            link.attr("x1", d => d.source.x)
+                .attr("y1", d => d.source.y)
+                .attr("x2", d => d.target.x)
+                .attr("y2", d => d.target.y);
+
+            node.attr("cx", d => d.x)
+                .attr("cy", d => d.y);
+
+            label.attr("x", d => d.x)
+                .attr("y", d => d.y);
+        });
+
+        // Funções de filtro
+        function filterNetwork(type) {
+            // Atualizar botões ativos
+            d3.selectAll("button").classed("active", false);
+            d3.select(`button[onclick="filterNetwork('${type}')"]`).classed("active", true);
+            
+            if (type === 'all') {
+                link.style("display", "block");
+                node.style("display", "block");
+                label.style("display", "block");
+            } else {
+                link.style("display", l => l.type === type ? "block" : "none");
+                // Mostrar apenas nós conectados ao filtro
+                const connectedNodes = new Set();
+                links.forEach(l => {
+                    if (l.type === type) {
+                        connectedNodes.add(l.source.id);
+                        connectedNodes.add(l.target.id);
+                    }
+                });
+                
+                node.style("display", d => connectedNodes.has(d.id) ? "block" : "none");
+                label.style("display", d => connectedNodes.has(d.id) ? "block" : "none");
+            }
+        }
+
+        // Funções auxiliares
+        function dragstarted(event, d) {
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            d.fx = d.x;
+            d.fy = d.y;
+        }
+
+        function dragged(event, d) {
+            d.fx = event.x;
+            d.fy = event.y;
+        }
+
+        function dragended(event, d) {
+            if (!event.active) simulation.alphaTarget(0);
+            d.fx = null;
+            d.fy = null;
+        }
+
+        function isConnected(a, b) {
+            return links.some(l => 
+                (l.source === a && l.target === b) || 
+                (l.source === b && l.target === a)
+            );
+        }
+
+        function countConnections(node) {
+            return links.filter(l => l.source === node || l.target === node).length;
+        }
+
+        function getGroupName(group) {
+            const groups = {
+                1: "Bancos Comerciais",
+                2: "Bancos de Investimento",
+                3: "Seguros e Previdência", 
+                4: "Fintechs & Pagamentos",
+                5: "Gestoras de Recursos",
+                6: "Corretoras"
+            };
+            return groups[group] || "Outro";
+        }
+
+        // Zoom e pan
+        svg.call(d3.zoom()
+            .extent([[0, 0], [width, height]])
+            .scaleExtent([0.3, 4])
+            .on("zoom", ({transform}) => {
+                g.attr("transform", transform);
+            }));
+
+        // Inicializar estatísticas
+        updateStats();
+
+        // Adicionar título dinâmico
+        const title = g.append("text")
+            .attr("x", width / 2)
+            .attr("y", 30)
+            .attr("text-anchor", "middle")
+            .attr("font-size", "16px")
+            .attr("font-weight", "bold")
+            .attr("fill", "#7f8c8d")
+            .text("Rede do Sistema Financeiro Brasileiro - 50 Maiores Empresas");
+    </script>
+</body>
+</html>
